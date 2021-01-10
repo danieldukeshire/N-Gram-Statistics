@@ -1,19 +1,18 @@
 /*********************************************************************************
- hw02.c
- Written by Daniel Dukeshire, 10.12.2019 - 11.1.2019
- 
+  Written by Daniel Dukeshire, 10.12.2019 - 11.1.2019
+
  This program is designed to take multiple input files from the command line, and
  return the total number of words, unique words, interesting bigrams, unique int-
  eresting bigrams, interesting trigrams, and unique interesting trigrams of those
  files.
- 
+
  After calculating these metrics, the system displays the top 50 words of those
  inputted documents, the top 20 interesting bigrams, and top 12 interesting trigrams.
- 
+
  This function utilizes UTHash, a hash imlementation found online with given
  "ut.hash.h", which contains a library of functions and hash table maintainability.
  More can be found here: https://troydhanson.github.io/uthash/userguide.html#_string_keys
- 
+
  On top of this, although the previously noted functionality does not utilize it,
  this contains a regex_match function, which can be called if necessary.
  *********************************************************************************/
@@ -71,13 +70,13 @@ char skip[48][60] = { "the", "of", "to", "and", "in", "said", "for", "that", "wa
 
 /*********************************************************************************
  num_lines:  Called by main() when reading in each input file
- 
+
             Loops through the input file to determine the number of
             lines in that particular file. Counts the number of '\n'
             This number is used for memory allocation for the one_line
- 
+
             Parameters: a FILE pointer representing the file opened
- 
+
             Returns: The number of lines
  *********************************************************************************/
 int num_lines(FILE* inputFile)
@@ -94,20 +93,20 @@ int num_lines(FILE* inputFile)
         if(temp == '\n' && chr == EOF) addition = 0;
     }
     rewind(inputFile);
-    
+
     return numLines+addition;                       // Amounts to the number of lines in the text file
 }
 
 /*********************************************************************************
  one_line:   Called by main() when reading each input file
- 
+
             Reads in the entire file into one single string. Returns that string
             with the new-line characters replaced with spaces.
- 
+
             Parameters: A FILE pointer representing the file opened, and the size of
             the file, which is the number of newLine chracters in the text (i.e.
             the number of lines.
- 
+
             Returns: Allocates a string to represent the entire file, returns
             that string.
  *********************************************************************************/
@@ -116,39 +115,39 @@ char* one_line(FILE* inputFile, int size)
     int charSize = 1024*size;
     char *readLine = calloc(charSize, sizeof(char));        // puts the entire file into one string! no \n
     char *currentLine = calloc(1024, sizeof(char));
-    
+
     while(fgets(currentLine, 1024, inputFile) != NULL)      // Loops through the input file
     {
         if(currentLine[strlen(currentLine)-1] == '\n')      // If a new line character is found
             currentLine[strlen(currentLine)-1] = ' ';       // replace it with a space
         strcat(readLine, currentLine);
     }
-    
+
     readLine[strlen(readLine)] = '\0';
     free(currentLine);
-    
+
     return readLine;
 }
 
 /********************************************************************************
  one_or_more:   Called by regex_match() when parsing reaches a '+' or '*'
- 
+
                 Starts from the back of the input line (readLine) string, finding
                 the character preceeding the '+' in regex. If found, the system
                 then loops from the current offset position in the readLine, ensuring
                 that are the values between the offset and ending character are valid.
- 
+
                 Parameters: Integer 'k' as the current parse location in the regex string
                 'expression', and an integer 'offset' value for the location in line
                 number 'o',
- 
+
                 Returns: The new offset location in the readLine string. If the '+'
                 or '*' is invalid, the system returns a 0.
  ********************************************************************************/
 int one_or_more(int k, int offset, int o, const char* expression, const char* readLine, int l)
 {
     bool isEndingCharacter;                                             // used to store if the ending-character is found
-    
+
     for(int i = strlen(readLine)-2; i>=(offset+o); i--)                 // loop from the back, searching for the ending character
     {
         isEndingCharacter = false;
@@ -194,7 +193,7 @@ int one_or_more(int k, int offset, int o, const char* expression, const char* re
         }
         else if(expression[k+1] == '.') isEndingCharacter = true;
         else if(expression[k+1] == readLine[i]) { isEndingCharacter = true; }
-        
+
         if(isEndingCharacter == true)                                   // If the rightmost character is found....
         {
             int j = 0;
@@ -274,14 +273,14 @@ int one_or_more(int k, int offset, int o, const char* expression, const char* re
 
 /*********************************************************************************
  regex_match:   Called by Main() for #ifdef USE_SUBMITTY_MAIN
- 
+
                 Loops through the input file line by line to determine
                 all lines matching the regex expression, which are added to the
                 matches array if found.
- 
+
                 Parameters: The filename as a string to read, string regex
                 as the regex value, and a NULL pointer to a matches array.
- 
+
                 Returns: An integer representing the number of lines added to the
                 matches array. Initializes the array, adds each found line.
  ********************************************************************************/
@@ -302,7 +301,7 @@ int regex_match(const char* filename, const char* regex, char*** matches)
     for(int m=0; m< size; m++) {
         matches2[m] = calloc(1024, sizeof(char));
     }
-    
+
     int matched_lines = 0;                                      // The number of matches lines, and the current word
     int curWord = 0;                                            // in the matches2 array
     for(int i=0; i<size; i++)                                   // Loops through the entire input file
@@ -362,7 +361,7 @@ int regex_match(const char* filename, const char* regex, char*** matches)
                     {
                         if(regex[y] == ']') break;
                         if(regex[y] == '^') { is_not = true;}   // Finds the carrot "not"
-                        
+
                         else if(regex[k]=='.'){                 // Repeats tje above code.
                             found = true;                       // This is to account for this syntax WITHIN the brackets
                         }
@@ -403,19 +402,19 @@ int regex_match(const char* filename, const char* regex, char*** matches)
                     temp = one_or_more(k, offset-1, j, regex, readLine, 0);     // Determines if there are more values!
                     if(temp != 0 )
                     {
-                        
+
                         offset = temp-j;                                        // As temp is o (j) and offset combined, must subtract j
                         if(k+1< strlen(regex) && regex[k+1] == '[') while(regex[k]!=']') k+=1;
                         else if(k+3 < strlen(regex) && regex[k+3] == ('*' | '?') && regex[k+1] == '\\') k+=3;
                         else if(k+2 < strlen(regex) && regex[k+2] == ('*' | '+' | '?')) k+=2;
                         else if(k+2<strlen(regex) && regex[k+1] == '\\') k+=2;
                         else if (k+1<strlen(regex) && regex[k+1] != '\0') k+=1; // If the + was the last character, only add one!
-                        
+
                         doesItMatch = true;
                     }
                 }
                 else if(regex[k] == readLine[j+offset]){ doesItMatch = true; }          // Standard comparison
-                
+
                 if ( doesItMatch == false )                             // If none of the regex values/standard comparison could be found ...
                 {
                     if(regex[k+1] == '?'||(regex[k] == '\\' && regex[k+2] == '?') )     // Could be none (with the ? or *)
@@ -423,7 +422,7 @@ int regex_match(const char* filename, const char* regex, char*** matches)
                         if(regex[k+1] == '?') k+=1;                     // double increments the expression iterator over the current '?'
                         else k +=2 ;
                         offset-=1;                                      // keeps the string iterator on the same line
-                        
+
                     }
                     else if((k+1 < strlen(regex) && regex[k+1] == '*') ||
                             (k+2 < strlen(regex) && regex[k] == '\\' && regex[k+2]=='*'))
@@ -452,7 +451,7 @@ int regex_match(const char* filename, const char* regex, char*** matches)
             }
         }
     }
-    
+
     free(readLine);
     *matches = matches2;
     return matched_lines;
@@ -460,19 +459,19 @@ int regex_match(const char* filename, const char* regex, char*** matches)
 
 /*********************************************************************************
  validate:  Called by main()
- 
+
             Takes in a string representing the entire input file, validates the
             proper words. Skips scripts, tags, other stop words. Adds
             the necessary words and other information to the hashtables
- 
+
             Parameters: The input file represented as one long string
- 
+
             Returns: Nothing, modifies the hash tables
  *********************************************************************************/
 void validate(char* line)
 {
     bool isScript = false;                                                          // Boolean to represent if currently in a script tag
-    
+
     // The words stored as each moves along ... if it found, move
     // word --> word2, and word2 --> word1, where word1 is forgotten
     // Represented in the bigram hash by "--word2-- --word--"
@@ -482,10 +481,10 @@ void validate(char* line)
     char* word2 = calloc(60, sizeof(char));
     char* temp = calloc(60, sizeof(char));
     int stringL = strlen(line);
-    
+
     int wordLoc = 0;
     bool firstQuote = false;
-    
+
     for(int i = 0; i < stringL; i++) {                                          // Looping Across the entire input file as a line
         if(isScript == true)
         {
@@ -520,7 +519,7 @@ void validate(char* line)
                 }
                 if(line[i] == '\0') i=placeHolder;                              // If the matching tag is not found, use the < as a space delimeter
             }
-            
+
             if(line[i] == '&')                                                  // Skipping over the &_____ stopwords
             {
                 bool is_skip  = false;
@@ -536,20 +535,20 @@ void validate(char* line)
                          && line[i+3] == ';' ) {i+=3; is_skip = true; }
                 if(is_skip == true) continue;
             }
-            
+
             if(line[i] == '\'' && wordLoc != 0 && isalpha(line[i+1]) && firstQuote == false){
                 word[wordLoc] = line[i];                                        // Determines the number of quotations
                 wordLoc++;                                                      // allowed in the word, which is one.
                 i++;                                                            // THis is represented by the firstQuote bool.
                 firstQuote = true;
             }
-            
+
             if(isalpha(line[i]))                                                // If all else prevails, the word is an alpha value
             {                                                                   // and can be added to the word
                 word[wordLoc] = tolower(line[i]);
                 wordLoc++;
             }
-            
+
             // Adding the current word to the three hash tables -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
             if(!isalpha(line[i]) || line[i+1] == '\0'){                         // Checking to see if the word is valid on a space delimeter
                 word[wordLoc] = '\0';
@@ -577,7 +576,7 @@ void validate(char* line)
                             if(strcmp(skip[l], word)==0) did_pass = false;              // stop words
                             if(strcmp(skip[l], word2)==0) did_pass = false;
                         }
-                        
+
                         if( did_pass == true && strlen(word2) >=2)
                         {
                             strcpy(temp, word2);
@@ -621,10 +620,10 @@ void validate(char* line)
                                     HASH_ADD_KEYPTR( bh, trigrams, t->name, strlen(t->name), t);
                                     Tid+=1;
                                 }
-                                
+
                             }
                         }
-                      
+
                     }
                     strcpy(word1, word2);   // Moving word2-->word1
                     strcpy(word2, word);    // Moving word-->word2
@@ -648,11 +647,11 @@ void validate(char* line)
 
 /*********************************************************************************
  print_hash():  Called by main()
- 
+
                 Prints the hash tables and their statistics
- 
+
                 Parameters: The number of arguments in the command line
- 
+
                 Returns: Nothing
  *********************************************************************************/
 void print_hash(int arguments)
@@ -664,25 +663,25 @@ void print_hash(int arguments)
     HASH_SRT(hh, bigrams, count_sort);                              // Sorts the bigrams by the count of each bigram
     HASH_SRT(bh, trigrams, sort_by_name);                           // Sorts the trigrams by the name of each trigram
     HASH_SRT(bh, trigrams, count_sort);                             // Sorts the trigram by the count of each trigram
-    
+
     int unique = 0, totalWords = 0;
     for(m=words; m != NULL; m=(struct my_struct*)(m->ah.next)) {    // Looping over the words hash with an iterator
         unique+=1;                                                  // Calculating the number of unique words
         totalWords+=m->count;                                       // Calculating the number of total Words
     }
-    
+
     int uniqueBigrams = 0, totalBigrams = 0;
     for(m=bigrams; m != NULL; m=(struct my_struct*)(m->hh.next)) {  // Looping over the bigrams hash with an iterator
         uniqueBigrams+=1;                                           // Calculating the number of unique bigrams
         totalBigrams+=m->count;                                     // Calculating the number of total bigrams
     }
-    
+
     int uniqueTrigrams = 0, totalTrigrams = 0;
     for(m=trigrams; m != NULL; m=(struct my_struct*)(m->bh.next)) { // Looping over the trigrams hash with an iterator
         uniqueTrigrams+=1;                                          // Calculating the number of unique trigrams
         totalTrigrams+=m->count;                                    // Calculating the number of total trigrams
     }
-    
+
     // Printing the Calculated Statistics
     printf("Total number of documents: %d\n", arguments-1);
     printf("Total number of words: %d\n", totalWords);
@@ -691,7 +690,7 @@ void print_hash(int arguments)
     printf("Total number of unique interesting bigrams: %d\n", uniqueBigrams);
     printf("Total number of interesting trigrams: %d\n", totalTrigrams);
     printf("Total number of unique interesting trigrams: %d\n", uniqueTrigrams);
-    
+
     printf("\nTop 50 words:\n");
     // PRINTING THE TOP 50 WORDS
     int j = 0;
@@ -721,7 +720,7 @@ void print_hash(int arguments)
 
 /*********************************************************************************
  main:  Reads in the files from the command line.
- 
+
         Calls: num_ines, one_line, validate, and print_hash
  *********************************************************************************/
 #ifndef USE_SUBMITTY_MAIN
@@ -734,7 +733,7 @@ int main(int argv, char* argc[])
         fprintf(stderr, "USAGE: a.out <input-file1> [ <input-file2> ... ]\n");
         exit(EXIT_FAILURE);                         // Terminates the script
     }
-   
+
     for(int i=1; i<argv; i++)                       // Loop through all the files specified in the command line
     {
         FILE* inputFile = fopen(argc[i], "r");      // Reads in the file
@@ -747,42 +746,42 @@ int main(int argv, char* argc[])
         if (NULL != inputFile) {
             fseek(inputFile, 0, SEEK_END);
             int csize = ftell(inputFile);
-            
+
             if (0 == csize) {
                 printf("file is empty\n");
             }
             rewind(inputFile);
         }
-       
+
         int fileSize = num_lines(inputFile);            // calls numLines, calcs number of lines in the file
         char *readLine = one_line(inputFile, fileSize); // puts the entire file into one string! no
         validate(readLine);                             // Calculates everything for the document, stores in hash
-        
+
         free(readLine);
         fclose(inputFile);
     }
-    
+
     print_hash(argv);
-    
+
     HASH_ITER(ah, words, w, tmp1) {                     // Words Hash Memory Clean
         HASH_DELETE(ah, words, w);
         free(w);
     }
-    
+
     HASH_ITER(hh, bigrams, b, tmp2) {                   // Bigram Hash Memory Clean
         HASH_DELETE(hh, bigrams, b);
         free(b);
     }
-    
+
     HASH_ITER(bh, trigrams, t, tmp3) {                  // Trigram Hash Memory Clean
         HASH_DELETE(bh, trigrams, t);
         free(t);
     }
-    
+
     free(tmp1);                                         // Freeing the struct iterators
     free(tmp2);
     free(tmp3);
-    
+
     return EXIT_SUCCESS;
 }
 #endif
